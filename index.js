@@ -21,7 +21,7 @@ const pool = new Pool({
 });
 console.log("Connexion réussie à la base de données !");
 
-const sql_create = `CREATE TABLE IF NOT EXISTS Livres(
+const sql_create = `CREATE TABLE IF NOT EXISTS Livres (
     Livre_ID SERIAL PRIMARY KEY,
     Titre VARCHAR(100) NOT NULL,
     Auteur VARCHAR(100) NOT NULL,
@@ -106,11 +106,35 @@ app.get("/create", (req, res) => {
     res.render("create", { model: {} });
 });
 
+// GET /delete
+app.get("/delete/:id", (req, res) => {
+    const id = req.params.id;
+    const sql = "SELECT * FROM Livres WHERE Livre_ID = $1";
+    pool.query(sql, [id], (err, result) => {
+        if (err) {
+            console.error(err.message);
+        }
+        res.render("delete", { model: result.rows[0] });
+    });
+});
+
 // POST /edit/xxx
 app.post("/edit/:id", (req, res) => {
     const id = req.params.id;
     const book = [req.body.titre, req.body.auteur, req.body.commentaires, id];
     const sql = "UPDATE Livres SET Titre = $1, Auteur = $2, Commentaires = $3 WHERE (Livre_ID = $4)";
+    pool.query(sql, book, (err, result) => {
+      if (err) {
+          console.error(err.message);
+      }
+      res.redirect("/books");
+    });
+  });
+
+// POST /create
+app.post("/create", (req, res) => {
+    const book = [req.body.titre, req.body.auteur, req.body.commentaires];
+    const sql = "INSERT INTO Livres (Titre, Auteur, Commentaires) VALUES ($1, $2, $3)";
     pool.query(sql, book, (err, result) => {
         if (err) {
             console.error(err.message);
@@ -119,14 +143,12 @@ app.post("/edit/:id", (req, res) => {
     });
 });
 
-// POST /create
-app.post("/create", (req, res) => {
-    const sql = "INSERT INTO Livres (Titre, Auteur, Commentaires) VALUES ($1, $2, $3)";
-    const book = [req.body.titre, req.body.auteur, req.body.commentaires];
-    console.log("Titre : " + getElementByTagName("titre"));
-    pool.query(sql, book, (err, result) => {
+// POST /delete/xxx
+app.post("/delete/:id", (req, res) => {
+    const id = req.params.id;
+    const sql = "DELETE FROM Livres WHERE Livre_ID = $1";
+    pool.query(sql, [id], (err, result) => {
         if (err) {
-            console.log("Erreur mon gars");
             console.error(err.message);
         }
         res.redirect("/books");
